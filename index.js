@@ -11,17 +11,27 @@ app.use(cors({ origin: '*', methods: '*', allowedHeaders: '*' }));
 app.use(bodyParser.raw({ type: '*/*' }));
 
 // Маршрут для Gemini (/g)
-app.all('/g*', createProxyHandler('generativelanguage.googleapis.com'));
+app.all('/g/*', createProxyHandler('generativelanguage.googleapis.com', '/g'));
 // Маршрут для Mistral (/m)
-app.all('/m*', createProxyHandler('api.mistral.ai')); 
+app.all('/m/*', createProxyHandler('api.mistral.ai', '/m')); 
 // Маршрут для Gemini v2 (/g2)
-app.all('/g2*', createProxyHandler('render-gf.duckdns.org:4433'));
+app.all('/g2/*', createProxyHandler('render-gf.duckdns.org:4433', '/g2'));
 
-function createProxyHandler(targetHost) {
+function createProxyHandler(targetHost, prefixToStrip) {
   return async (req, res) => {
     try {
-      const targetUrl = new URL(req.originalUrl, `https://${targetHost}`);
-      
+      // Убираем префикс из пути
+      let targetPath = req.originalUrl;
+      if (prefixToStrip && targetPath.startsWith(prefixToStrip)) {
+        targetPath = targetPath.slice(prefixToStrip.length);
+        // Если после удаления префикса путь не начинается с /, добавляем его
+        if (!targetPath.startsWith('/')) {
+          targetPath = '/' + targetPath;
+        }
+      }
+
+      const targetUrl = new URL(targetPath, `https://${targetHost}`);
+
       const options = {
         method: req.method,
         headers: {
@@ -42,12 +52,16 @@ function createProxyHandler(targetHost) {
       });
 
       externalReq.on('error', handleProxyError(res));
-      req.body && externalReq.write(req.body);
+      if (req.body && req.body.length > 0) {
+        externalReq.write(req.body);
+      }
       externalReq.end();
 
     } catch (err) {
       console.error(`Error in ${targetHost} proxy:`, err);
-      !res.headersSent && res.status(500).json({ error: err.message });
+      if (!res.headersSent) {
+        res.status(500).json({ error: err.message });
+      }
     }
   };
 }

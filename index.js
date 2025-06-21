@@ -22,7 +22,10 @@ function createProxyHandler(targetHost, prefixToStrip) {
     try {
       // Убираем префикс из пути
       let targetPath = req.originalUrl;
+      let forwardedPrefix = ''; // Переменная для хранения префикса
+
       if (prefixToStrip && targetPath.startsWith(prefixToStrip)) {
+        forwardedPrefix = prefixToStrip; // Сохраняем префикс
         targetPath = targetPath.slice(prefixToStrip.length);
         // Если после удаления префикса путь не начинается с /, добавляем его
         if (!targetPath.startsWith('/')) {
@@ -43,6 +46,12 @@ function createProxyHandler(targetHost, prefixToStrip) {
 
       // Очистка заголовков
       ['content-length', 'x-proxy-request', 'origin', 'referer'].forEach(h => delete options.headers[h]);
+
+      // Добавляем X-Forwarded-Prefix, если префикс был использован ===
+      if (forwardedPrefix) {
+          options.headers['X-Forwarded-Prefix'] = forwardedPrefix;
+          console.log(`Adding X-Forwarded-Prefix: ${forwardedPrefix} for target: ${targetHost}${targetPath}`);
+      }
 
       const externalReq = https.request(targetUrl, options, (externalRes) => {
         if (!res.headersSent) {

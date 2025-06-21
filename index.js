@@ -53,6 +53,13 @@ function createProxyHandler(targetHost, prefixToStrip) {
           console.log(`Adding X-Forwarded-Prefix: ${forwardedPrefix} for target: ${targetHost}${targetPath}`);
       }
 
+      // Flask's ProxyFix использует этот заголовок для установки request.host
+      // TODO: не очень хорошо... но пусть пока так
+      if (req.headers['host']) {
+          options.headers['X-Forwarded-Host'] = req.headers['host'];
+          console.log(`Adding X-Forwarded-Host: ${req.headers['host']}`);
+      }
+
       const externalReq = https.request(targetUrl, options, (externalRes) => {
         if (!res.headersSent) {
           res.writeHead(externalRes.statusCode, externalRes.headers);

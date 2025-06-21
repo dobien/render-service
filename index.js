@@ -53,12 +53,28 @@ function createProxyHandler(targetHost, prefixToStrip) {
           console.log(`Adding X-Forwarded-Prefix: ${forwardedPrefix} for target: ${targetHost}${targetPath}`);
       }
 
-      // Flask's ProxyFix использует этот заголовок для установки request.host
       // TODO: не очень хорошо... но пусть пока так
+      // Flask's ProxyFix использует этот заголовок для установки request.host
       if (req.headers['host']) {
           options.headers['X-Forwarded-Host'] = req.headers['host'];
           console.log(`Adding X-Forwarded-Host: ${req.headers['host']}`);
+
+          // Добавляем X-Forwarded-Port ---
+          const hostParts = req.headers['host'].split(':');
+          if (hostParts.length > 1) {
+              // Если в заголовке Host указан порт, используем его
+              options.headers['X-Forwarded-Port'] = hostParts[hostParts.length - 1];
+          } else {
+              // Если порт не указан (например, 'example.com'), предполагаем стандартный порт
+              // На Render обычно используется HTTPS, поэтому по умолчанию 443
+              options.headers['X-Forwarded-Port'] = '443';
+          }
+          console.log(`Adding X-Forwarded-Port: ${options.headers['X-Forwarded-Port']}`);
       }
+
+      // Render по умолчанию обслуживает запросы по HTTPS
+      options.headers['X-Forwarded-Proto'] = 'https';
+      console.log(`Adding X-Forwarded-Proto: https`);
 
       const externalReq = https.request(targetUrl, options, (externalRes) => {
         if (!res.headersSent) {

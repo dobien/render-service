@@ -45,7 +45,8 @@ function createProxyHandler(targetHost, prefixToStrip) {
       };
 
       // Очистка заголовков
-      ['content-length', 'x-proxy-request', 'origin', 'referer'].forEach(h => delete options.headers[h]);
+      // ['content-length', 'x-proxy-request', 'origin', 'referer'].forEach(h => delete options.headers[h]);
+      ['x-proxy-request', 'origin', 'referer'].forEach(h => delete options.headers[h]);
 
       // Добавляем X-Forwarded-Prefix, если префикс был использован ===
       if (forwardedPrefix) {

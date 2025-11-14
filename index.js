@@ -8,7 +8,7 @@ const port = process.env.PORT || 3000;
 
 // Общие middleware
 app.use(cors({ origin: '*', methods: '*', allowedHeaders: '*' }));
-app.use(bodyParser.raw({ type: '*/*' }));
+app.use(bodyParser.raw({ type: '*/*', limit: '500mb' })); // задаём лимит для отправляемых файлов, чтобы не получать ошибку `Payload too large`
 
 // Маршрут для Gemini (/g)
 app.all('/g/*', createProxyHandler('generativelanguage.googleapis.com', '/g'));

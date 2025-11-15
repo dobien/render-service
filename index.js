@@ -17,6 +17,10 @@ app.all('/m/*', createProxyHandler('api.mistral.ai', '/m'));
 // Маршрут для Gemini v2 (/g2)
 app.all('/g2/*', createProxyHandler('render-gf.duckdns.org:4433', '/g2'));
 
+app.get('/heartbeat', (req, res) => {
+  res.status(200).send('OK');
+});
+
 function createProxyHandler(targetHost, prefixToStrip) {
   return async (req, res) => {
     try {
